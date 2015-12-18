@@ -2,47 +2,52 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 )
 
 var legacyFunc = func(s string) int {
-	println("legacy: " + s)
 	return 2
 }
 
 var shinyNewFunc = func(s string) int {
-	println("shinyNew: " + s)
-	return 3
+	return 99999
 }
 
+var scaling = 0
+
 func main() {
+	scaling = 10
 	input := []string{"Ajax", "PSV", "Feyenoord"}
 
 	for _, s := range input {
-		expFunc(s)
+		runExperiment(s)
 	}
 
 	println("done.")
 }
 
-func expFunc(s string) int {
-	exp := &experiment{}
-	exp.current = legacyFunc
-	exp.improvement = shinyNewFunc
+func runExperiment(s string) int {
+	return newExperiment(legacyFunc, shinyNewFunc).run(s)
+}
 
-	return exp.run(s)
+func newExperiment(current, improvement func(string) int) *experiment {
+	return &experiment{
+		current,
+		improvement,
+		rand.New(rand.NewSource(time.Now().UnixNano())),
+	}
 }
 
 type experiment struct {
 	current func(s string) int
 	improvement func(s string) int
+	r *rand.Rand
 	// timeout
 }
 
 func (e *experiment) run(s string) int {
-	// add scaling
-
 	var cur, impr int
 	var curDuration, imprDuration time.Duration
 	start := time.Now()
@@ -69,6 +74,11 @@ func (e *experiment) run(s string) int {
 	// use metrics iso prints
 	fmt.Printf("Current functionality duration: %s\n", curDuration)
 	fmt.Printf("Improved functionality duration: %s\n", imprDuration)
+
+	// scale improved func up (or down)
+	if e.r.Intn(100) < scaling {
+		return impr
+	}
 
 	return cur
 }
