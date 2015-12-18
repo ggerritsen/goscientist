@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"sync"
 	"time"
 )
 
@@ -12,13 +11,13 @@ var legacyFunc = func(s string) int {
 }
 
 var shinyNewFunc = func(s string) int {
-	return 99999
+	time.Sleep(10*time.Millisecond)
+	return 2
 }
 
-var scaling = 0
+var scaling = 50
 
 func main() {
-	scaling = 10
 	input := []string{"Ajax", "PSV", "Feyenoord"}
 
 	for _, s := range input {
@@ -29,43 +28,61 @@ func main() {
 }
 
 func runExperiment(s string) int {
-	return newExperiment(legacyFunc, shinyNewFunc).run(s)
+	return newExperiment(legacyFunc, shinyNewFunc, 100 * time.Millisecond).run(s)
 }
 
-func newExperiment(current, improvement func(string) int) *experiment {
+func newExperiment(current, improvement func(string) int, timeout time.Duration) *experiment {
 	return &experiment{
 		current,
 		improvement,
+		timeout,
 		rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
 
 type experiment struct {
 	current func(s string) int
-	improvement func(s string) int
+	improved func(s string) int
+	timeout time.Duration
 	r *rand.Rand
-	// timeout
+}
+
+type funcResult struct {
+	result int
+	duration time.Duration
 }
 
 func (e *experiment) run(s string) int {
-	var cur, impr int
-	var curDuration, imprDuration time.Duration
+	var cur int
+	var curDuration time.Duration
 	start := time.Now()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		cur = e.current(s)
-		curDuration = time.Since(start)
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		impr = shinyNewFunc(s)
-		imprDuration = time.Since(start)
-	}()
-	wg.Wait() // add timeout through context?
+	c := make(chan *funcResult, 1)
+	go func(ex *experiment, st time.Time) {
+		r := ex.improved(s)
+		dur := time.Since(st)
+		select {
+			case c <- &funcResult{r, dur}:
+			default:
+		}
+	}(e, start)
+
+	cur = e.current(s)
+	curDuration = time.Since(start)
+
+	var funcRes *funcResult
+	select {
+	case funcRes = <- c:
+	case <- time.After(e.timeout):
+	}
+
+	if funcRes == nil {
+		fmt.Printf("No experiment outcome, improved func took too long\n")
+		return cur
+	}
+
+	impr := funcRes.result
+	imprDuration := funcRes.duration
 
 	if cur != impr {
 		fmt.Printf("ERROR current result != improvement result: %+v != %+v\n", cur, impr)
@@ -77,8 +94,10 @@ func (e *experiment) run(s string) int {
 
 	// scale improved func up (or down)
 	if e.r.Intn(100) < scaling {
+		fmt.Printf("Chose improved functionality\n")
 		return impr
 	}
 
+	fmt.Printf("Chose current functionality\n")
 	return cur
 }
