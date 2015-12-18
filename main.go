@@ -27,33 +27,48 @@ func main() {
 }
 
 func expFunc(s string) int {
-	//	timeout := 2 * time.Second
+	exp := &experiment{}
+	exp.current = legacyFunc
+	exp.improvement = shinyNewFunc
 
-	var legacyResult, shinyNewResult int
-	var legacyDuration, shinyNewDuration time.Duration
+	return exp.run(s)
+}
+
+type experiment struct {
+	current func(s string) int
+	improvement func(s string) int
+	// timeout
+}
+
+func (e *experiment) run(s string) int {
+	// add scaling
+
+	var cur, impr int
+	var curDuration, imprDuration time.Duration
 	start := time.Now()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		legacyResult = legacyFunc(s)
-		legacyDuration = time.Since(start)
-		wg.Done()
+		defer wg.Done()
+		cur = e.current(s)
+		curDuration = time.Since(start)
 	}()
 	wg.Add(1)
 	go func() {
-		shinyNewResult = shinyNewFunc(s)
-		shinyNewDuration = time.Since(start)
-		wg.Done()
+		defer wg.Done()
+		impr = shinyNewFunc(s)
+		imprDuration = time.Since(start)
 	}()
 	wg.Wait() // add timeout through context?
 
-	if legacyResult != shinyNewResult {
-		fmt.Printf("ERROR legacy result %+v != shiny new result %+v\n", legacyResult, shinyNewResult)
+	if cur != impr {
+		fmt.Printf("ERROR current result != improvement result: %+v != %+v\n", cur, impr)
 	}
 
-	fmt.Printf("Legacy duration: %s\n", legacyDuration)
-	fmt.Printf("Shiny new duration: %s\n", shinyNewDuration)
+	// use metrics iso prints
+	fmt.Printf("Current functionality duration: %s\n", curDuration)
+	fmt.Printf("Improved functionality duration: %s\n", imprDuration)
 
-	return legacyResult
+	return cur
 }
