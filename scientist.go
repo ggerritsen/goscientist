@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// TODO use interface{} iso func(interface{}, use reflect.Value.Call()
 func newExperiment(current, improved func(interface{}) interface{}) *experiment {
 	return &experiment{
 		current,
@@ -62,7 +63,7 @@ func (e *experiment) run(s interface{}) interface{} {
 	impr := funcRes.result
 	imprDuration := funcRes.duration
 
-	// use metrics iso printouts
+	// TODO use metrics iso printouts
 	fmt.Printf("Current functionality duration: %s\n", curDuration)
 	fmt.Printf("Improved functionality duration: %s\n", imprDuration)
 
