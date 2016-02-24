@@ -2,19 +2,26 @@ package main
 
 import (
 	"strings"
+	"log"
 )
 
-var championCurrentFunc = func(s interface{}) interface{} {
-	input := s.(string)
-	return strings.ToLower(input) == "ajax"
+var championCurrentFunc = func(s string) bool {
+	return strings.ToLower(s) == "ajax"
 }
 
-var championImprovedFunc = func(s interface{}) interface{} {
-	input := s.(string)
-	return input[0] == 'A'
+var championImprovedFunc = func(s string) bool {
+	return s[0] == 'A'
 }
 
 func runFindChampionExperiment(s string) bool {
-	result := newExperiment(championCurrentFunc, championImprovedFunc).run(s)
-	return result.(bool)
+	exp, err := newExperiment(championCurrentFunc, championImprovedFunc)
+	if err != nil {
+		log.Fatalf("Could not create new experiment: %s", err)
+	}
+
+	result, err := exp.run(s)
+	if err != nil {
+		log.Fatalf("Could not run experiment: %s", err)
+	}
+	return result[0].(bool)
 }
