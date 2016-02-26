@@ -119,7 +119,7 @@ func eq(a, b []interface{}) bool {
 	}
 
 	for i, aa := range a {
-		if aa != b[i] {
+		if !reflect.DeepEqual(aa, b[i]) {
 			return false
 		}
 	}
