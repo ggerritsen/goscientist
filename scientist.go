@@ -2,18 +2,20 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
-	"time"
 	"reflect"
+	"time"
 )
 
-// TODO use interface{} iso func(interface{}, use reflect.Value.Call()
-func newExperiment(currentFunc, improvedFunc interface{}) (*experiment, error) {
+type experimentError error
+
+func newExperiment(currentFunc, improvedFunc interface{}) (*experiment, experimentError) {
 	c := reflect.ValueOf(currentFunc);
 	if c.Kind() != reflect.Func {
 		return nil, fmt.Errorf("currentFunc is not a function")
 	}
-	i := reflect.ValueOf(currentFunc);
+	i := reflect.ValueOf(improvedFunc);
 	if i.Kind() != reflect.Func {
 		return nil, fmt.Errorf("improvedFunc is not a function")
 	}
@@ -43,7 +45,7 @@ type funcResult struct {
 // run runs the experiment and returns the return values of the
 // functions that are in the experiment, in combination with an
 // error (or nil).
-func (e *experiment) run(s ...interface{}) ([]interface{}, error) {
+func (e *experiment) run(s ...interface{}) ([]interface{}, experimentError) {
 	// check input first
 	if len(s) != e.currentFunc.Type().NumIn() {
 		return nil, fmt.Errorf("Number of inputs (%d) is incorrect", len(s))
@@ -58,22 +60,27 @@ func (e *experiment) run(s ...interface{}) ([]interface{}, error) {
 	}
 
 	c := make(chan *funcResult, 1)
-	start := time.Now()
-	go func(ex *experiment, st time.Time) {
+	go func(ex *experiment) {
+		start := time.Now()
 		r := ex.improvedFunc.Call(input)
+		d := time.Since(start)
+
 		output := make([]interface{}, len(r))
 		for i, a := range r {
 			output[i] = a.Interface()
 		}
 		res := &funcResult{
 			output,
-			time.Since(st),
+			d,
 		}
-		c <- res
-	}(e, start)
 
+		c <- res
+	}(e)
+
+	start := time.Now()
 	r := e.currentFunc.Call(input)
 	curDuration := time.Since(start)
+
 	// TODO perhaps use reflect.ValueOf(e.currentFunc).Type().Out()?
 	output := make([]interface{}, len(r))
 	for i, a := range r {
@@ -87,7 +94,7 @@ func (e *experiment) run(s ...interface{}) ([]interface{}, error) {
 	}
 
 	if funcRes == nil {
-		fmt.Printf("No experiment outcome, improved func took too long\n")
+		log.Printf("No experiment outcome, improved func took too long\n")
 		return output, nil
 	}
 
@@ -95,21 +102,26 @@ func (e *experiment) run(s ...interface{}) ([]interface{}, error) {
 	imprDuration := funcRes.duration
 
 	// TODO use metrics iso printouts
-	fmt.Printf("Current functionality duration: %s\n", curDuration)
-	fmt.Printf("Improved functionality duration: %s\n", imprDuration)
+	if imprDuration < curDuration {
+		log.Printf("Improved faster (%s vs. %s)", curDuration, imprDuration)
+	} else {
+		log.Printf("Current faster (%s vs. %s)", curDuration, imprDuration)
+	}
+	//	fmt.Printf("Current functionality duration: %s\n", curDuration)
+	//	fmt.Printf("Improved functionality duration: %s\n", imprDuration)
 
 	if !eq(output, impr) {
-		fmt.Printf("ERROR current result != improvement result for input %+v, choosing current functionality (%+v != %+v)\n", s, output, impr)
+		log.Printf("ERROR current result != improvement result for input %+v, choosing current functionality (%+v != %+v)\n", s, output, impr)
 		return output, nil
 	}
 
 	// TODO scale improved func up (or down)
 	if e.r.Intn(100) < e.scaling {
-		fmt.Printf("Chose improved functionality\n")
+		log.Printf("Chose improved functionality\n")
 		return impr, nil
 	}
 
-	fmt.Printf("Chose current functionality\n")
+	log.Printf("Chose current functionality\n")
 	return output, nil
 }
 

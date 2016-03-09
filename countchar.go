@@ -1,29 +1,29 @@
 package main
 
 import (
-	"strings"
 	"log"
+	"strings"
 )
 
-var charCurrentFunc = func(s string) int {
-	return len(s)
-}
-
-var charImprovedFunc = func(s string) int {
+var charCurrent = func(s string) int {
 	return strings.Count(s, "") - 1
 }
 
+var charImproved = func(s string) int {
+	return len(s)
+}
+
 func runCharCountExperiment(s string) int {
-	exp, err := newExperiment(charCurrentFunc, charImprovedFunc)
+	exp, err := newExperiment(charCurrent, charImproved)
 	if err != nil {
-		log.Fatalf("Could not create new experiment: %s", err)
+		log.Printf("Error: could not create new experiment: %s", err)
+		return charCurrent(s)
 	}
 
 	result, err := exp.run(s)
 	if err != nil {
-		log.Fatalf("Could not run experiment: %s", err)
+		log.Printf("Could not run experiment: %s", err)
+		return charCurrent(s)
 	}
 	return result[0].(int)
 }
-
-// TODO perhaps use interface?

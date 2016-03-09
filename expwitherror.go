@@ -1,10 +1,11 @@
 package main
+
 import (
 	"log"
 	"strconv"
 )
 
-func parseInt(s string) (int, error) {
+func parseIntCurrent(s string) (int, error) {
 	return strconv.Atoi(s)
 }
 
@@ -17,14 +18,16 @@ func parseIntImproved(s string) (int, error) {
 }
 
 func runParseIntExperiment(s string) (int, error) {
-	exp, err := newExperiment(parseInt, parseIntImproved)
+	exp, err := newExperiment(parseIntCurrent, parseIntImproved)
 	if err != nil {
-		log.Fatalf("Could not create new experiment: %s", err)
+		log.Printf("Error: could not create new experiment: %s", err)
+		return parseIntCurrent(s)
 	}
 
 	r, err := exp.run(s)
 	if err != nil {
-		log.Fatalf("Could not run experiment: %s", err)
+		log.Printf("Could not run experiment: %s", err)
+		return parseIntCurrent(s)
 	}
 
 	i := r[0].(int)

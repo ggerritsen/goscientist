@@ -1,11 +1,11 @@
 package main
 
 import (
-	"math/big"
 	"log"
+	"math/big"
 )
 
-var primeCurrentFunc = func(n int) bool {
+var primeCurrent = func(n int) bool {
 	if n <= 1 {
 		return false
 	}
@@ -18,20 +18,22 @@ var primeCurrentFunc = func(n int) bool {
 	return true
 }
 
-var primeImprovedFunc = func(n int) bool {
+var primeImproved = func(n int) bool {
 	i := big.NewInt(int64(n))
 	return i.ProbablyPrime(1)
 }
 
 func runFindPrimeExperiment(n int) bool {
-	exp, err := newExperiment(primeCurrentFunc, primeImprovedFunc)
+	exp, err := newExperiment(primeCurrent, primeImproved)
 	if err != nil {
-		log.Fatalf("Could not create new experiment: %s", err)
+		log.Printf("Error: could not create new experiment: %s", err)
+		return primeCurrent(n)
 	}
 
 	result, err := exp.run(n)
 	if err != nil {
-		log.Fatalf("Could not run experiment: %s", err)
+		log.Printf("Could not run experiment: %s", err)
+		return primeCurrent(n)
 	}
 	return result[0].(bool)
 }
