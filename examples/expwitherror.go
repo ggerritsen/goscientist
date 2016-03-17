@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"strconv"
+
+	"github.com/ggerritsen/goscientist"
 )
 
 func parseIntCurrent(s string) (int, error) {
@@ -18,13 +20,13 @@ func parseIntImproved(s string) (int, error) {
 }
 
 func runParseIntExperiment(s string) (int, error) {
-	exp, err := newExperiment(parseIntCurrent, parseIntImproved)
+	exp, err := goscientist.NewExperiment(parseIntCurrent, parseIntImproved)
 	if err != nil {
 		log.Printf("Error: could not create new experiment: %s", err)
 		return parseIntCurrent(s)
 	}
 
-	r, err := exp.run(s)
+	r, err := exp.Run(s)
 	if err != nil {
 		log.Printf("Could not run experiment: %s", err)
 		return parseIntCurrent(s)

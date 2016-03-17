@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"strings"
+
+	"github.com/ggerritsen/goscientist"
 )
 
 var championCurrent = func(s string) bool {
@@ -14,13 +16,13 @@ var championImproved = func(s string) bool {
 }
 
 func runFindChampionExperiment(s string) bool {
-	exp, err := newExperiment(championCurrent, championImproved)
+	exp, err := goscientist.NewExperiment(championCurrent, championImproved)
 	if err != nil {
 		log.Printf("Error: could not create new experiment: %s", err)
 		return championCurrent(s)
 	}
 
-	result, err := exp.run(s)
+	result, err := exp.Run(s)
 	if err != nil {
 		log.Printf("Could not run experiment: %s", err)
 		return championCurrent(s)

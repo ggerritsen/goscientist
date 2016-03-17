@@ -1,4 +1,4 @@
-package main
+package goscientist
 
 import (
 	"fmt"
@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-type experimentError error
+type ExperimentError error
 
-func newExperiment(currentFunc, improvedFunc interface{}) (*experiment, experimentError) {
+func NewExperiment(currentFunc, improvedFunc interface{}) (*experiment, ExperimentError) {
 	c := reflect.ValueOf(currentFunc);
 	if c.Kind() != reflect.Func {
 		return nil, fmt.Errorf("currentFunc is not a function")
@@ -45,7 +45,7 @@ type funcResult struct {
 // run runs the experiment and returns the return values of the
 // functions that are in the experiment, in combination with an
 // error (or nil).
-func (e *experiment) run(s ...interface{}) ([]interface{}, experimentError) {
+func (e *experiment) Run(s ...interface{}) ([]interface{}, ExperimentError) {
 	// check input first
 	if len(s) != e.currentFunc.Type().NumIn() {
 		return nil, fmt.Errorf("Number of inputs (%d) is incorrect", len(s))

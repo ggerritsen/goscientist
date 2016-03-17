@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"math/big"
+
+	"github.com/ggerritsen/goscientist"
 )
 
 var primeCurrent = func(n int) bool {
@@ -24,13 +26,13 @@ var primeImproved = func(n int) bool {
 }
 
 func runFindPrimeExperiment(n int) bool {
-	exp, err := newExperiment(primeCurrent, primeImproved)
+	exp, err := goscientist.NewExperiment(primeCurrent, primeImproved)
 	if err != nil {
 		log.Printf("Error: could not create new experiment: %s", err)
 		return primeCurrent(n)
 	}
 
-	result, err := exp.run(n)
+	result, err := exp.Run(n)
 	if err != nil {
 		log.Printf("Could not run experiment: %s", err)
 		return primeCurrent(n)
