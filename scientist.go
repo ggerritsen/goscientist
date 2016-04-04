@@ -11,11 +11,11 @@ import (
 type ExperimentError error
 
 func NewExperiment(currentFunc, improvedFunc interface{}) (*experiment, ExperimentError) {
-	c := reflect.ValueOf(currentFunc);
+	c := reflect.ValueOf(currentFunc)
 	if c.Kind() != reflect.Func {
 		return nil, fmt.Errorf("currentFunc is not a function")
 	}
-	i := reflect.ValueOf(improvedFunc);
+	i := reflect.ValueOf(improvedFunc)
 	if i.Kind() != reflect.Func {
 		return nil, fmt.Errorf("improvedFunc is not a function")
 	}
@@ -89,8 +89,8 @@ func (e *experiment) Run(s ...interface{}) ([]interface{}, ExperimentError) {
 
 	var funcRes *funcResult
 	select {
-	case funcRes = <- c:
-	case <- time.After(e.timeout):
+	case funcRes = <-c:
+	case <-time.After(e.timeout):
 	}
 
 	if funcRes == nil {
